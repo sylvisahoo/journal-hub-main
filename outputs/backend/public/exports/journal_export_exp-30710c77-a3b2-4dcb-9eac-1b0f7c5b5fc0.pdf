@@ -1,0 +1,30 @@
+==================================================
+JOURNAL ARCHIVE EXPORT (PDF)
+User Name: User One
+Export ID: exp-30710c77-a3b2-4dcb-9eac-1b0f7c5b5fc0
+Generated At: 2026-06-11T19:00:07.151Z
+Total Entries: 2
+==================================================
+
+Entry #1
+Title: User 1 Journal 2
+Date: 2026-06-12
+Category ID: None
+Word Count: 7
+Privacy: Publicly Shared
+Content:
+--------------------------------------------------
+Content for journal 2 which is public.
+--------------------------------------------------
+
+Entry #2
+Title: User 1 Journal 1
+Date: 2026-06-11
+Category ID: None
+Word Count: 7
+Privacy: Private
+Content:
+--------------------------------------------------
+Content for journal 1 which is private.
+--------------------------------------------------
+

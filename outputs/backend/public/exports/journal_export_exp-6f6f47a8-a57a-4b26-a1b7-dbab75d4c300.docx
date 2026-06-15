@@ -1,0 +1,30 @@
+==================================================
+JOURNAL ARCHIVE EXPORT (DOCX)
+User Name: User One
+Export ID: exp-6f6f47a8-a57a-4b26-a1b7-dbab75d4c300
+Generated At: 2026-06-11T18:49:12.279Z
+Total Entries: 2
+==================================================
+
+Entry #1
+Title: User 1 Journal 2
+Date: 2026-06-12
+Category ID: None
+Word Count: 7
+Privacy: Publicly Shared
+Content:
+--------------------------------------------------
+Content for journal 2 which is public.
+--------------------------------------------------
+
+Entry #2
+Title: User 1 Journal 1
+Date: 2026-06-11
+Category ID: None
+Word Count: 7
+Privacy: Private
+Content:
+--------------------------------------------------
+Content for journal 1 which is private.
+--------------------------------------------------
+
