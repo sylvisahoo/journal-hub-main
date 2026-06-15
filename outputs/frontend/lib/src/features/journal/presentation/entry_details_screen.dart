@@ -420,7 +420,21 @@ class _MarkdownBodyRenderer extends StatelessWidget {
     final List<Widget> bodyWidgets = [];
 
     for (final line in lines) {
-      if (line.trim().startsWith('- ')) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('### ')) {
+        bodyWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+            child: Text(
+              trimmed.substring(4),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        );
+      } else if (trimmed.startsWith('- ')) {
         // Bullet item formatting
         bodyWidgets.add(
           Padding(
@@ -431,7 +445,7 @@ class _MarkdownBodyRenderer extends StatelessWidget {
                 Text('• ', style: TextStyle(fontSize: 16, color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
                 Expanded(
                   child: RichText(
-                    text: _parseStyledText(line.trim().substring(2), theme),
+                    text: _parseStyledText(trimmed.substring(2), theme),
                   ),
                 ),
               ],

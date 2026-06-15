@@ -127,6 +127,7 @@ class JournalRepository {
       tagIds: List<String>.from(json['tags'] ?? []),
       wordCount: json['wordCount'] as int,
       isPrivate: json['isPrivate'] as bool,
+      isEncrypted: json['isEncrypted'] as bool? ?? false,
       versionNumber: json['versionNumber'] as int,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
@@ -190,6 +191,7 @@ class JournalRepository {
         if (entry.categoryId != null && entry.categoryId!.isNotEmpty) 'categoryId': entry.categoryId,
         'tags': entry.tagIds,
         'isPrivate': entry.isPrivate,
+        'isEncrypted': entry.isEncrypted,
       });
       return _mapJsonToEntry(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -210,6 +212,7 @@ class JournalRepository {
         'categoryId': entry.categoryId,
         'tags': entry.tagIds,
         'isPrivate': entry.isPrivate,
+        'isEncrypted': entry.isEncrypted,
         'versionNumber': entry.versionNumber,
       });
       return _mapJsonToEntry(response.data as Map<String, dynamic>);
@@ -247,6 +250,49 @@ class JournalRepository {
       if (e.response != null && e.response!.data != null) {
         final errCode = e.response!.data['errorCode'];
         throw Exception(errCode ?? 'SHARE_LINK_FAILED');
+      }
+      throw Exception('CONNECTION_ERROR');
+    }
+  }
+
+  Future<JournalEntry> fetchSharedEntry(String shareToken) async {
+    try {
+      final response = await _apiClient.dio.get('/share/$shareToken');
+      final json = response.data as Map<String, dynamic>;
+      return JournalEntry(
+        journalId: json['journalId'] as String? ?? '',
+        userId: '',
+        categoryId: json['categoryId'] as String?,
+        title: json['title'] as String? ?? '',
+        content: json['content'] as String? ?? '',
+        entryDate: DateTime.parse(json['entryDate'] as String? ?? DateTime.now().toIso8601String()),
+        tagIds: List<String>.from(json['tags'] ?? []),
+        wordCount: json['wordCount'] as int? ?? 0,
+        isPrivate: false,
+        isEncrypted: false,
+        versionNumber: 1,
+        createdAt: DateTime.parse(json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
+        updatedAt: DateTime.parse(json['updatedAt'] as String? ?? DateTime.now().toIso8601String()),
+      );
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        final errCode = e.response!.data['errorCode'];
+        throw Exception(errCode ?? 'FETCH_SHARED_ENTRY_FAILED');
+      }
+      throw Exception('CONNECTION_ERROR');
+    }
+  }
+
+  Future<Map<String, dynamic>> importJournals(List<Map<String, dynamic>> entries) async {
+    try {
+      final response = await _apiClient.dio.post('/journals/import', data: {
+        'entries': entries,
+      });
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        final errCode = e.response!.data['errorCode'];
+        throw Exception(errCode ?? 'IMPORT_JOURNALS_FAILED');
       }
       throw Exception('CONNECTION_ERROR');
     }

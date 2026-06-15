@@ -174,11 +174,31 @@ describe('Data Export APIs (Module 10)', () => {
       expect(parsed[0]).toHaveProperty('content');
     });
 
-    it('should reject invalid formats with 400 INVALID_EXPORT_FORMAT', async () => {
+    it('should successfully trigger an HTML export job', async () => {
       const res = await request(app)
         .post('/api/v1/export')
         .set('Authorization', `Bearer ${user1Token}`)
         .send({ format: 'HTML' });
+
+      expect(res.statusCode).toBe(202);
+      const exportId = res.body.exportId;
+
+      await waitForStatus(exportId, ['Completed', 'Failed']);
+
+      const exportsDir = path.join(process.cwd(), 'public/exports');
+      const filePath = path.join(exportsDir, `journal_export_${exportId}.html`);
+      expect(fs.existsSync(filePath)).toBe(true);
+
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      expect(fileContent).toContain('<!DOCTYPE html>');
+      expect(fileContent).toContain('Journal Archive Export');
+    });
+
+    it('should reject invalid formats with 400 INVALID_EXPORT_FORMAT', async () => {
+      const res = await request(app)
+        .post('/api/v1/export')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({ format: 'CSV' });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.errorCode).toBe('INVALID_EXPORT_FORMAT');

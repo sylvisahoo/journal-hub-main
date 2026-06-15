@@ -42,7 +42,8 @@ export const createJournalSchema = Joi.object({
   }),
   categoryId: Joi.string().trim().allow(null, '').optional(),
   tags: Joi.array().items(Joi.string().trim()).optional(),
-  isPrivate: Joi.boolean().optional()
+  isPrivate: Joi.boolean().optional(),
+  isEncrypted: Joi.boolean().optional()
 });
 
 export const updateJournalSchema = Joi.object({
@@ -57,6 +58,7 @@ export const updateJournalSchema = Joi.object({
   categoryId: Joi.string().trim().allow(null, '').optional(),
   tags: Joi.array().items(Joi.string().trim()).optional(),
   isPrivate: Joi.boolean().optional(),
+  isEncrypted: Joi.boolean().optional(),
   versionNumber: Joi.number().integer().required().messages({
     'any.required': 'VERSION_REQUIRED',
     'number.base': 'VERSION_REQUIRED'

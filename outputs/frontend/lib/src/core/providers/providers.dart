@@ -11,6 +11,7 @@ import '../repositories/journal_repository.dart';
 import '../repositories/analytics_repository.dart';
 import '../repositories/export_repository.dart';
 import '../../config/router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // 1. Repository Providers
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -182,6 +183,7 @@ class JournalsNotifier extends StateNotifier<AsyncValue<List<JournalEntry>>> {
     String? categoryId,
     required List<String> tagIds,
     required bool isPrivate,
+    bool isEncrypted = false,
   }) async {
     final entry = JournalEntry(
       journalId: '',
@@ -193,6 +195,7 @@ class JournalsNotifier extends StateNotifier<AsyncValue<List<JournalEntry>>> {
       tagIds: tagIds,
       wordCount: content.trim().split(RegExp(r'\s+')).length,
       isPrivate: isPrivate,
+      isEncrypted: isEncrypted,
       versionNumber: 1,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -245,10 +248,28 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedCategoryFilterProvider = StateProvider<String?>((ref) => null);
 final selectedTagFilterProvider = StateProvider<String?>((ref) => null);
 final selectedDateRangeFilterProvider = StateProvider<DateTimeRange?>((ref) => null);
+final selectedLengthFilterProvider = StateProvider<String?>((ref) => null); // 'short', 'medium', 'long'
 
 // 6. Filtered Entries Provider
 final filteredEntriesProvider = Provider<AsyncValue<List<JournalEntry>>>((ref) {
-  return ref.watch(journalsProvider);
+  final entriesState = ref.watch(journalsProvider);
+  final lengthFilter = ref.watch(selectedLengthFilterProvider);
+  
+  if (lengthFilter == null) return entriesState;
+  
+  return entriesState.whenData((entries) {
+    return entries.where((entry) {
+      final words = entry.wordCount;
+      if (lengthFilter == 'short') {
+        return words < 150;
+      } else if (lengthFilter == 'medium') {
+        return words >= 150 && words <= 500;
+      } else if (lengthFilter == 'long') {
+        return words > 500;
+      }
+      return true;
+    }).toList();
+  });
 });
 
 // 7. Analytics Provider
@@ -288,14 +309,33 @@ class ExportsNotifier extends StateNotifier<List<ExportJob>> {
 
   ExportsNotifier(this._repo) : super([]) {
     _refreshJobs();
-    // Start interval refresh to check progress of running jobs
-    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) => _refreshJobs());
+    _startTimer();
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) => _refreshJobs());
+  }
+
+  void _triggerFastPolling() {
+    _pollingTimer?.cancel();
+    int count = 0;
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      await _refreshJobs();
+      count++;
+      
+      final hasActive = state.any((j) => j.status == 'Pending' || j.status == 'Processing');
+      if (!hasActive || count >= 20) {
+        timer.cancel();
+        _startTimer();
+      }
+    });
   }
 
   Future<void> _refreshJobs() async {
@@ -309,6 +349,7 @@ class ExportsNotifier extends StateNotifier<List<ExportJob>> {
     try {
       await _repo.requestExport(format);
       await _refreshJobs();
+      _triggerFastPolling();
     } catch (e) {
       rethrow;
     }
@@ -318,6 +359,7 @@ class ExportsNotifier extends StateNotifier<List<ExportJob>> {
     try {
       await _repo.retryExport(exportId);
       await _refreshJobs();
+      _triggerFastPolling();
     } catch (e) {
       rethrow;
     }
@@ -331,21 +373,89 @@ final exportsProvider = StateNotifierProvider<ExportsNotifier, List<ExportJob>>(
 
 // 9. Theme Mode Provider
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system);
-
-  void toggleTheme() {
-    if (state == ThemeMode.light) {
-      state = ThemeMode.dark;
-    } else {
-      state = ThemeMode.light;
-    }
+  ThemeModeNotifier() : super(ThemeMode.system) {
+    _loadTheme();
   }
 
-  void setTheme(ThemeMode mode) {
+  Future<void> _loadTheme() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final themeIndex = prefs.getInt('theme_mode');
+      if (themeIndex != null) {
+        state = ThemeMode.values[themeIndex];
+      }
+    } catch (_) {}
+  }
+
+  void toggleTheme() async {
+    final nextMode = state == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    setTheme(nextMode);
+  }
+
+  void setTheme(ThemeMode mode) async {
     state = mode;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('theme_mode', mode.index);
+    } catch (_) {}
   }
 }
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier();
+});
+
+class WritingGoals {
+  final int dailyWordGoal;
+  final int weeklyEntryGoal;
+
+  const WritingGoals({
+    required this.dailyWordGoal,
+    required this.weeklyEntryGoal,
+  });
+
+  WritingGoals copyWith({
+    int? dailyWordGoal,
+    int? weeklyEntryGoal,
+  }) {
+    return WritingGoals(
+      dailyWordGoal: dailyWordGoal ?? this.dailyWordGoal,
+      weeklyEntryGoal: weeklyEntryGoal ?? this.weeklyEntryGoal,
+    );
+  }
+}
+
+class WritingGoalsNotifier extends StateNotifier<WritingGoals> {
+  WritingGoalsNotifier() : super(const WritingGoals(dailyWordGoal: 250, weeklyEntryGoal: 3)) {
+    _loadGoals();
+  }
+
+  Future<void> _loadGoals() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final daily = prefs.getInt('daily_word_goal') ?? 250;
+      final weekly = prefs.getInt('weekly_entry_goal') ?? 3;
+      state = WritingGoals(dailyWordGoal: daily, weeklyEntryGoal: weekly);
+    } catch (_) {}
+  }
+
+  Future<void> setDailyWordGoal(int goal) async {
+    state = state.copyWith(dailyWordGoal: goal);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('daily_word_goal', goal);
+    } catch (_) {}
+  }
+
+  Future<void> setWeeklyEntryGoal(int goal) async {
+    state = state.copyWith(weeklyEntryGoal: goal);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('weekly_entry_goal', goal);
+    } catch (_) {}
+  }
+}
+
+final writingGoalsProvider = StateNotifierProvider<WritingGoalsNotifier, WritingGoals>((ref) {
+  return WritingGoalsNotifier();
 });

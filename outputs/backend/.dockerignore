@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+data/*.db
+data/*_test.db
+public/exports/*
+.env
+.git
+.idea
+Dockerfile
+docker-compose*

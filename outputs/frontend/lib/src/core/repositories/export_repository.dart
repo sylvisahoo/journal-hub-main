@@ -7,12 +7,14 @@ class ExportRepository {
 
   ExportRepository(this._apiClient);
 
-  ExportJob _mapJsonToJob(Map<String, dynamic> json) {
+  ExportJob _mapJsonToJob(Map<String, dynamic> json, {String? defaultFormat}) {
     return ExportJob(
-      exportId: json['exportId'] as String,
-      format: json['format'] as String,
-      status: json['status'] as String,
-      requestedAt: DateTime.parse(json['requestedAt'] as String),
+      exportId: json['exportId'] as String? ?? '',
+      format: json['format'] as String? ?? defaultFormat ?? 'PDF',
+      status: json['status'] as String? ?? 'Pending',
+      requestedAt: json['requestedAt'] != null
+          ? DateTime.parse(json['requestedAt'] as String)
+          : DateTime.now(),
       downloadUrl: json['downloadUrl'] as String?,
     );
   }
@@ -36,7 +38,7 @@ class ExportRepository {
       final response = await _apiClient.dio.post('/export', data: {
         'format': format,
       });
-      return _mapJsonToJob(response.data as Map<String, dynamic>);
+      return _mapJsonToJob(response.data as Map<String, dynamic>, defaultFormat: format);
     } on DioException catch (e) {
       if (e.response != null && e.response!.data != null) {
         final errCode = e.response!.data['errorCode'];

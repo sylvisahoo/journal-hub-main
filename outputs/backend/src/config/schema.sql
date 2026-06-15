@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS AnalyticsSnapshot (
 CREATE TABLE IF NOT EXISTS ExportRequest (
     export_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    export_format TEXT NOT NULL CHECK(export_format IN ('PDF', 'DOCX', 'JSON')),
+    export_format TEXT NOT NULL CHECK(export_format IN ('PDF', 'DOCX', 'JSON', 'HTML')),
     export_status TEXT NOT NULL CHECK(export_status IN ('Pending', 'Processing', 'Completed', 'Failed')),
     requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at DATETIME,

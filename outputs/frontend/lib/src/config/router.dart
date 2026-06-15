@@ -7,6 +7,7 @@ import '../features/journal/presentation/calendar_screen.dart';
 import '../features/journal/presentation/editor_screen.dart';
 import '../features/journal/presentation/entries_screen.dart';
 import '../features/journal/presentation/entry_details_screen.dart';
+import '../features/journal/presentation/shared_view_screen.dart';
 import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/export/presentation/export_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -25,6 +26,13 @@ final goRouter = GoRouter(
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/share/:token',
+      builder: (context, state) {
+        final token = state.pathParameters['token']!;
+        return SharedViewScreen(token: token);
+      },
     ),
     ShellRoute(
       builder: (context, state, child) {

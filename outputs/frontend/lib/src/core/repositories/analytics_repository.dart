@@ -36,6 +36,14 @@ class AnalyticsRepository {
         distribution[category] = (distribution[category] ?? 0) + 1;
       }
 
+      // Calculate tagDistribution dynamically from entries list
+      final Map<String, int> tagDist = {};
+      for (final entry in entries) {
+        for (final tagId in entry.tagIds) {
+          tagDist[tagId] = (tagDist[tagId] ?? 0) + 1;
+        }
+      }
+
       // Calculate monthlyWords dynamically for the last 6 months (ending current month)
       final List<int> monthlyWordsList = [];
       final now = DateTime.now();
@@ -56,6 +64,7 @@ class AnalyticsRepository {
         totalWords: totalWords,
         heatmapData: heatmap,
         categoryDistribution: distribution,
+        tagDistribution: tagDist,
         monthlyWords: monthlyWordsList,
       );
     } on DioException catch (e) {

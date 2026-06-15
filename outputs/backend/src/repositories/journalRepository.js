@@ -1,19 +1,24 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../config/db.js';
+import { decryptContent } from '../utils/crypto.js';
 
 export const journalRepository = {
   // Helper to map DB row to API response model
   _mapRow(row, tagIds = []) {
     if (!row) return null;
+    const isEncrypted = row.content && row.content.startsWith('ENC:');
+    const decryptedContent = isEncrypted ? decryptContent(row.content, row.user_id) : row.content;
+
     return {
       journalId: row.journal_id,
       userId: row.user_id,
       categoryId: row.category_id,
       title: row.title,
-      content: row.content,
+      content: decryptedContent,
       entryDate: row.entry_date,
       wordCount: row.word_count,
       isPrivate: row.is_private === 1 || row.is_private === true || row.is_private === '1',
+      isEncrypted: isEncrypted,
       versionNumber: row.version_number,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

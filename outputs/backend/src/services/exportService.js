@@ -11,8 +11,8 @@ import { ApiError } from '../middleware/errorHandler.js';
 
 export const exportService = {
   async requestExport(userId, format, hostUrl, clientIp = null) {
-    if (!format || (format !== 'PDF' && format !== 'DOCX' && format !== 'JSON')) {
-      throw new ApiError(400, 'INVALID_EXPORT_FORMAT', 'Format must be PDF, DOCX, or JSON');
+    if (!format || (format !== 'PDF' && format !== 'DOCX' && format !== 'JSON' && format !== 'HTML')) {
+      throw new ApiError(400, 'INVALID_EXPORT_FORMAT', 'Format must be PDF, DOCX, JSON, or HTML');
     }
 
     const exportId = `exp-${uuidv4()}`;
@@ -216,6 +216,56 @@ export const exportService = {
 
         const docxBuffer = await Packer.toBuffer(docxDoc);
         fs.writeFileSync(filePath, docxBuffer);
+      } else if (format === 'HTML') {
+        let htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Journal Hub Export</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
+    h1 { border-bottom: 2px solid #5cb85c; padding-bottom: 10px; color: #1e3a1e; }
+    .metadata { background: #f4f6f8; padding: 15px; border-radius: 8px; margin-bottom: 30px; font-size: 14px; }
+    .entry { border: 1px solid #e1e4e8; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .entry-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 13px; color: #666; }
+    .entry-title { font-size: 20px; font-weight: bold; color: #2d3748; margin-top: 0; margin-bottom: 5px; }
+    .entry-content { white-space: pre-wrap; font-size: 15px; color: #4a5568; }
+    .tag { display: inline-block; background: #e2e8f0; color: #4a5568; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Journal Archive Export</h1>
+  <div class="metadata">
+    <p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>
+    <p><strong>User Name:</strong> ${fullName}</p>
+    <p><strong>Total Entries:</strong> ${entries.length}</p>
+  </div>
+        `;
+
+        for (const entry of entries) {
+          const tagsHtml = entry.tags && entry.tags.length > 0 
+            ? entry.tags.map(t => `<span class="tag">#${t}</span>`).join(' ') 
+            : '';
+
+          htmlContent += `
+  <div class="entry">
+    <div class="entry-title">${entry.title}</div>
+    <div class="entry-header">
+      <span>Date: ${entry.entryDate}</span>
+      <span>${entry.isPrivate ? '🔒 Private' : '🔓 Public'}</span>
+    </div>
+    <div style="margin-bottom: 15px;">${tagsHtml}</div>
+    <div class="entry-content">${entry.content}</div>
+  </div>
+          `;
+        }
+
+        htmlContent += `
+</body>
+</html>
+        `;
+        fs.writeFileSync(filePath, htmlContent, 'utf8');
       }
 
       // Create completed file entry in DB

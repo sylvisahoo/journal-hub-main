@@ -62,6 +62,7 @@ class JournalEntry {
   final List<String> tagIds;
   final int wordCount;
   final bool isPrivate;
+  final bool isEncrypted;
   final int versionNumber;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -76,6 +77,7 @@ class JournalEntry {
     required this.tagIds,
     required this.wordCount,
     required this.isPrivate,
+    this.isEncrypted = false,
     required this.versionNumber,
     required this.createdAt,
     required this.updatedAt,
@@ -91,6 +93,7 @@ class JournalEntry {
     List<String>? tagIds,
     int? wordCount,
     bool? isPrivate,
+    bool? isEncrypted,
     int? versionNumber,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -105,6 +108,7 @@ class JournalEntry {
       tagIds: tagIds ?? this.tagIds,
       wordCount: wordCount ?? this.wordCount,
       isPrivate: isPrivate ?? this.isPrivate,
+      isEncrypted: isEncrypted ?? this.isEncrypted,
       versionNumber: versionNumber ?? this.versionNumber,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -119,6 +123,7 @@ class AnalyticsData {
   final int totalWords;
   final Map<DateTime, int> heatmapData;
   final Map<String, int> categoryDistribution;
+  final Map<String, int> tagDistribution;
   final List<int> monthlyWords;
 
   const AnalyticsData({
@@ -127,6 +132,7 @@ class AnalyticsData {
     required this.totalWords,
     required this.heatmapData,
     required this.categoryDistribution,
+    required this.tagDistribution,
     required this.monthlyWords,
   });
 }

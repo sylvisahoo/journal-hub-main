@@ -8,6 +8,7 @@ import verificationRepository from '../repositories/verificationRepository.js';
 import sessionRepository from '../repositories/sessionRepository.js';
 import passwordResetRepository from '../repositories/passwordResetRepository.js';
 import auditRepository from '../repositories/auditRepository.js';
+import categoryRepository from '../repositories/categoryRepository.js';
 import emailService from './emailService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
@@ -32,6 +33,17 @@ export const authService = {
       accountStatus: 'Pending'
     };
     const user = await userRepository.createUser(userRecord);
+
+    // 3.5 Auto-seed default categories
+    const defaultCategories = ['Personal', 'Work', 'Ideas', 'Reflections'];
+    for (const catName of defaultCategories) {
+      const categoryId = `c-${uuidv4()}`;
+      await categoryRepository.create({
+        categoryId,
+        userId,
+        categoryName: catName
+      });
+    }
 
     // 4. Set hardcoded verification token to '123456' for demo
     const verificationId = `v-${uuidv4()}`;

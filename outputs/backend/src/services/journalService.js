@@ -4,6 +4,7 @@ import categoryRepository from '../repositories/categoryRepository.js';
 import tagRepository from '../repositories/tagRepository.js';
 import auditRepository from '../repositories/auditRepository.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { encryptContent } from '../utils/crypto.js';
 
 export const journalService = {
   // Helper to compute word count from markdown or plain text
@@ -31,20 +32,21 @@ export const journalService = {
   },
 
   async createJournal(userId, data, clientIp = null) {
-    const { title, content, entryDate, categoryId, tags = [], isPrivate = true } = data;
+    const { title, content, entryDate, categoryId, tags = [], isPrivate = true, isEncrypted = false } = data;
 
     // Validate relationships
     await this._validateCategoryAndTags(userId, categoryId, tags);
 
     const journalId = `j-${uuidv4()}`;
     const wordCount = this._calculateWordCount(content);
+    const finalContent = isEncrypted ? encryptContent(content.trim(), userId) : content.trim();
 
     const entryRecord = {
       journalId,
       userId,
       categoryId,
       title: title.trim(),
-      content: content.trim(),
+      content: finalContent,
       entryDate: typeof entryDate === 'string' ? entryDate : (entryDate instanceof Date ? entryDate.toISOString() : String(entryDate)),
       wordCount,
       isPrivate
@@ -73,7 +75,7 @@ export const journalService = {
   },
 
   async updateJournal(userId, journalId, data, clientIp = null) {
-    const { title, content, entryDate, categoryId, tags, isPrivate, versionNumber } = data;
+    const { title, content, entryDate, categoryId, tags, isPrivate, isEncrypted, versionNumber } = data;
 
     const entry = await journalRepository.findById(journalId);
     if (!entry || entry.deletedAt) {
@@ -102,13 +104,15 @@ export const journalService = {
     const updatedTags = tags !== undefined ? tags : entry.tags;
 
     const wordCount = this._calculateWordCount(updatedContent);
+    const updatedIsEncrypted = isEncrypted !== undefined ? isEncrypted : entry.isEncrypted;
+    const finalContent = updatedIsEncrypted ? encryptContent(updatedContent, userId) : updatedContent;
 
     const entryRecord = {
       journalId,
       userId,
       categoryId: updatedCategoryId,
       title: updatedTitle,
-      content: updatedContent,
+      content: finalContent,
       entryDate: updatedEntryDate,
       wordCount,
       isPrivate: updatedIsPrivate
@@ -142,6 +146,39 @@ export const journalService = {
 
     return {
       message: permanent ? 'Journal entry permanently deleted' : 'Journal entry soft deleted'
+    };
+  },
+
+  async importJournals(userId, entries, clientIp = null) {
+    let importedCount = 0;
+    for (const entryData of entries) {
+      const { title, content, date, entryDate, isPrivate = true, isEncrypted = false, categoryId = null, tags = [] } = entryData;
+      
+      const finalDate = entryDate || date || new Date().toISOString();
+      const journalId = `j-${uuidv4()}`;
+      const wordCount = this._calculateWordCount(content);
+      const finalContent = isEncrypted ? encryptContent(content.trim(), userId) : content.trim();
+
+      const entryRecord = {
+        journalId,
+        userId,
+        categoryId: categoryId || null,
+        title: title ? title.trim() : 'Imported Entry',
+        content: finalContent,
+        entryDate: typeof finalDate === 'string' ? finalDate : (finalDate instanceof Date ? finalDate.toISOString() : String(finalDate)),
+        wordCount,
+        isPrivate: isPrivate ? 1 : 0
+      };
+
+      await journalRepository.createEntry(entryRecord, tags);
+      importedCount++;
+    }
+    
+    await auditRepository.log(userId, 'JournalEntry', null, 'Import', clientIp, { count: importedCount });
+    
+    return {
+      message: `${importedCount} journal entries imported successfully`,
+      importedCount
     };
   }
 };

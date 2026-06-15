@@ -1,0 +1,18 @@
+[
+  {
+    "title": "User 1 Journal 2",
+    "date": "2026-06-12",
+    "categoryId": null,
+    "wordCount": 7,
+    "isPrivate": false,
+    "content": "Content for journal 2 which is public."
+  },
+  {
+    "title": "User 1 Journal 1",
+    "date": "2026-06-11",
+    "categoryId": null,
+    "wordCount": 7,
+    "isPrivate": true,
+    "content": "Content for journal 1 which is private."
+  }
+]

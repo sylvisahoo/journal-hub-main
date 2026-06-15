@@ -369,4 +369,83 @@ describe('Journal Management APIs', () => {
       expect(resDelete.body.errorCode).toBe('ACCESS_DENIED');
     });
   });
+
+  describe('Encryption Integration', () => {
+    it('should store content encrypted when isEncrypted is true, but return plaintext in API response', async () => {
+      const res = await request(app)
+        .post('/api/v1/journals')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          title: 'Encrypted Title',
+          content: 'This secret should be encrypted in the database.',
+          entryDate: '2026-06-11T12:00:00.000Z',
+          isEncrypted: true
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.content).toBe('This secret should be encrypted in the database.');
+      expect(res.body.isEncrypted).toBe(true);
+
+      // Verify the content in the database directly is encrypted (starts with ENC:)
+      const dbRow = await db.get('SELECT * FROM JournalEntry WHERE journal_id = ?;', [
+        res.body.journalId
+      ]);
+      expect(dbRow.content).not.toBe('This secret should be encrypted in the database.');
+      expect(dbRow.content.startsWith('ENC:')).toBe(true);
+    });
+  });
+
+  describe('Bulk Import Integration', () => {
+    it('should successfully import multiple entries and log an audit trail', async () => {
+      const res = await request(app)
+        .post('/api/v1/journals/import')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          entries: [
+            {
+              title: 'Imported Entry 1',
+              content: 'Content 1',
+              entryDate: '2026-06-11T12:00:00.000Z',
+              isPrivate: true
+            },
+            {
+              title: 'Imported Entry 2',
+              content: 'Content 2',
+              entryDate: '2026-06-12T12:00:00.000Z',
+              isPrivate: false,
+              isEncrypted: true
+            }
+          ]
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.importedCount).toBe(2);
+
+      // Verify the entries were inserted
+      const entries = await db.all('SELECT * FROM JournalEntry WHERE user_id = ? ORDER BY entry_date ASC;', [user1Id]);
+      const imported1 = entries.find(e => e.title === 'Imported Entry 1');
+      const imported2 = entries.find(e => e.title === 'Imported Entry 2');
+
+      expect(imported1).toBeDefined();
+      expect(imported1.content).toBe('Content 1');
+
+      expect(imported2).toBeDefined();
+      expect(imported2.content.startsWith('ENC:')).toBe(true);
+
+      // Verify AuditLog exists
+      const audit = await db.get("SELECT * FROM AuditLog WHERE user_id = ? AND action_type = 'Import';", [user1Id]);
+      expect(audit).toBeDefined();
+      expect(audit.metadata).toContain('"count":2');
+    });
+
+    it('should reject invalid import request with 400', async () => {
+      const res = await request(app)
+        .post('/api/v1/journals/import')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({ entries: 'not-an-array' });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.errorCode).toBe('INVALID_IMPORT_DATA');
+    });
+  });
 });

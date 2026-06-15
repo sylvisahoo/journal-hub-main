@@ -27,6 +27,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   String? _selectedCategoryId;
   final List<String> _selectedTagIds = [];
   bool _isPrivate = true;
+  bool _isEncrypted = false;
   int _wordCount = 0;
   
   // Auto-save and draft properties
@@ -75,6 +76,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           _selectedTagIds.clear();
           _selectedTagIds.addAll(entry.tagIds);
           _isPrivate = entry.isPrivate;
+          _isEncrypted = entry.isEncrypted;
           _wordCount = entry.wordCount;
           _saveStatus = 'Draft loaded';
         });
@@ -260,6 +262,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           categoryId: _selectedCategoryId,
           tagIds: _selectedTagIds,
           isPrivate: _isPrivate,
+          isEncrypted: _isEncrypted,
           wordCount: _wordCount,
         );
         await journalsNotifier.updateEntry(updated);
@@ -271,6 +274,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           categoryId: _selectedCategoryId,
           tagIds: _selectedTagIds,
           isPrivate: _isPrivate,
+          isEncrypted: _isEncrypted,
           entryDate: DateTime.now(),
         );
       }
@@ -307,6 +311,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     final theme = Theme.of(context);
     final categories = ref.watch(categoriesProvider);
     final tags = ref.watch(tagsProvider);
+    final goals = ref.watch(writingGoalsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -383,66 +388,102 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   ),
                 ),
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.format_bold_rounded, size: 20),
-                    onPressed: () => _insertFormatting('**', '**'),
-                    tooltip: 'Bold',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_italic_rounded, size: 20),
-                    onPressed: () => _insertFormatting('*', '*'),
-                    tooltip: 'Italic',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_list_bulleted_rounded, size: 20),
-                    onPressed: () => _insertFormatting('\n- ', ''),
-                    tooltip: 'Bullet List',
-                  ),
-                  const VerticalDivider(width: 20, thickness: 1, indent: 8, endIndent: 8),
-                  
-                  // Category Dropdown
-                  DropdownButton<String?>(
-                    value: _selectedCategoryId,
-                    hint: const Text('Select Category', style: TextStyle(fontSize: 13)),
-                    underline: const SizedBox(),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('Uncategorized', style: TextStyle(fontSize: 13)),
-                      ),
-                      ...categories.map((c) => DropdownMenuItem(
-                        value: c.categoryId,
-                        child: Text(c.name, style: const TextStyle(fontSize: 13)),
-                      )),
-                    ],
-                    onChanged: (val) => setState(() {
-                      _selectedCategoryId = val;
-                      _markModified();
-                      _triggerAutoSave();
-                    }),
-                  ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.format_bold_rounded, size: 20),
+                      onPressed: () => _insertFormatting('**', '**'),
+                      tooltip: 'Bold',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_italic_rounded, size: 20),
+                      onPressed: () => _insertFormatting('*', '*'),
+                      tooltip: 'Italic',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_list_bulleted_rounded, size: 20),
+                      onPressed: () => _insertFormatting('\n- ', ''),
+                      tooltip: 'Bullet List',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.title_rounded, size: 20),
+                      onPressed: () => _insertFormatting('\n### ', ''),
+                      tooltip: 'Heading',
+                    ),
+                    const SizedBox(
+                      height: 20,
+                      child: VerticalDivider(width: 24, thickness: 1, indent: 2, endIndent: 2),
+                    ),
+                    
+                    // Category Dropdown
+                    DropdownButton<String?>(
+                      value: _selectedCategoryId,
+                      hint: const Text('Select Category', style: TextStyle(fontSize: 13)),
+                      underline: const SizedBox(),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Uncategorized', style: TextStyle(fontSize: 13)),
+                        ),
+                        ...categories.map((c) => DropdownMenuItem(
+                          value: c.categoryId,
+                          child: Text(c.name, style: const TextStyle(fontSize: 13)),
+                        )),
+                      ],
+                      onChanged: (val) => setState(() {
+                        _selectedCategoryId = val;
+                        _markModified();
+                        _triggerAutoSave();
+                      }),
+                    ),
 
-                  const Spacer(),
+                    const SizedBox(
+                      height: 20,
+                      child: VerticalDivider(width: 24, thickness: 1, indent: 2, endIndent: 2),
+                    ),
 
-                  // Lock / Privacy Toggle
-                  Text(
-                    _isPrivate ? 'Private' : 'Shared',
-                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                  const SizedBox(width: 4),
-                  Switch(
-                    value: !_isPrivate,
-                    onChanged: (val) => setState(() {
-                      _isPrivate = !val;
-                      _markModified();
-                      _triggerAutoSave();
-                    }),
-                    activeTrackColor: theme.colorScheme.secondary.withOpacity(0.2),
-                    activeColor: theme.colorScheme.secondary,
-                  ),
-                ],
+                    // Encryption Toggle
+                    Text(
+                      _isEncrypted ? 'Encrypted' : 'Plaintext',
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                    ),
+                    const SizedBox(width: 4),
+                    Switch(
+                      value: _isEncrypted,
+                      onChanged: (val) => setState(() {
+                        _isEncrypted = val;
+                        _markModified();
+                        _triggerAutoSave();
+                      }),
+                      activeTrackColor: theme.colorScheme.primary.withOpacity(0.2),
+                      activeColor: theme.colorScheme.primary,
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                      child: VerticalDivider(width: 24, thickness: 1, indent: 2, endIndent: 2),
+                    ),
+
+                    // Lock / Privacy Toggle
+                    Text(
+                      _isPrivate ? 'Private' : 'Shared',
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                    ),
+                    const SizedBox(width: 4),
+                    Switch(
+                      value: !_isPrivate,
+                      onChanged: (val) => setState(() {
+                        _isPrivate = !val;
+                        _markModified();
+                        _triggerAutoSave();
+                      }),
+                      activeTrackColor: theme.colorScheme.secondary.withOpacity(0.2),
+                      activeColor: theme.colorScheme.secondary,
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -563,13 +604,32 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '$_wordCount words',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.4),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              value: (_wordCount / goals.dailyWordGoal).clamp(0.0, 1.0),
+                              strokeWidth: 2,
+                              backgroundColor: theme.colorScheme.onSurface.withOpacity(0.08),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                _wordCount >= goals.dailyWordGoal ? Colors.green : theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$_wordCount / ${goals.dailyWordGoal} words',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _wordCount >= goals.dailyWordGoal
+                                  ? Colors.green
+                                  : theme.colorScheme.onSurface.withOpacity(0.4),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         '${_contentController.text.length} characters',

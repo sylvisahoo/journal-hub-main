@@ -303,6 +303,7 @@ class MockAnalyticsRepository extends AnalyticsRepository {
     int totalWords = 0;
     final Map<DateTime, int> heatmap = {};
     final Map<String, int> distribution = {};
+    final Map<String, int> tagDist = {};
 
     for (final entry in entries) {
       totalWords += entry.wordCount;
@@ -311,6 +312,10 @@ class MockAnalyticsRepository extends AnalyticsRepository {
       
       final category = entry.categoryId ?? 'Uncategorized';
       distribution[category] = (distribution[category] ?? 0) + 1;
+
+      for (final tagId in entry.tagIds) {
+        tagDist[tagId] = (tagDist[tagId] ?? 0) + 1;
+      }
     }
 
     // Hardcode some monthly progress counts
@@ -320,6 +325,7 @@ class MockAnalyticsRepository extends AnalyticsRepository {
       totalWords: totalWords,
       heatmapData: heatmap,
       categoryDistribution: distribution,
+      tagDistribution: tagDist,
       monthlyWords: const [120, 180, 240, 210, 310, 450],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/models.dart';
 import '../../../core/providers/providers.dart';
+import '../../../core/widgets/tag_cloud.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
@@ -76,6 +77,40 @@ class AnalyticsScreen extends ConsumerWidget {
                         _buildHeatmapGrid(theme, analytics.heatmapData),
                         const SizedBox(height: 16),
                         _buildHeatmapLegend(theme),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Tag Cloud Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Most Used Tags',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Visual cloud of tags by usage frequency.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: TagCloud(
+                            tagDistribution: analytics.tagDistribution,
+                            allTags: ref.watch(tagsProvider),
+                          ),
+                        ),
                       ],
                     ),
                   ),

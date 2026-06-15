@@ -22,6 +22,10 @@ router.get(
   journalController.listJournals
 );
 
+router.post(
+  '/import',
+  journalController.importJournals
+);
 
 router.get('/:journalId', journalController.getJournal);
 

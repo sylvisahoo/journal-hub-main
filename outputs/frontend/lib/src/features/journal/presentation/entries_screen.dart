@@ -39,6 +39,7 @@ class _EntriesScreenState extends ConsumerState<EntriesScreen> {
     final selectedCat = ref.watch(selectedCategoryFilterProvider);
     final selectedTag = ref.watch(selectedTagFilterProvider);
     final selectedDateRange = ref.watch(selectedDateRangeFilterProvider);
+    final selectedLength = ref.watch(selectedLengthFilterProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -210,8 +211,61 @@ class _EntriesScreenState extends ConsumerState<EntriesScreen> {
                 ),
                 const SizedBox(width: 8),
 
+                // Length Filter Chip
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<String?>(
+                    value: selectedLength,
+                    hint: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurface.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.08)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.wrap_text_rounded, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Length', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                        ],
+                      ),
+                    ),
+                    selectedItemBuilder: (context) {
+                      return [
+                        const DropdownMenuItem(value: null, child: Text('All Lengths')),
+                        const DropdownMenuItem(value: 'short', child: Text('Short (< 150 words)')),
+                        const DropdownMenuItem(value: 'medium', child: Text('Medium (150-500 words)')),
+                        const DropdownMenuItem(value: 'long', child: Text('Long (> 500 words)')),
+                      ];
+                    },
+                    items: const [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('All Lengths'),
+                      ),
+                      DropdownMenuItem<String?>(
+                        value: 'short',
+                        child: Text('Short (< 150 words)'),
+                      ),
+                      DropdownMenuItem<String?>(
+                        value: 'medium',
+                        child: Text('Medium (150-500 words)'),
+                      ),
+                      DropdownMenuItem<String?>(
+                        value: 'long',
+                        child: Text('Long (> 500 words)'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      ref.read(selectedLengthFilterProvider.notifier).state = val;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+
                 // Reset Filter Button
-                if (selectedCat != null || selectedTag != null || selectedDateRange != null || _searchController.text.isNotEmpty)
+                if (selectedCat != null || selectedTag != null || selectedDateRange != null || selectedLength != null || _searchController.text.isNotEmpty)
                   TextButton.icon(
                     onPressed: () {
                       _searchController.clear();
@@ -219,6 +273,7 @@ class _EntriesScreenState extends ConsumerState<EntriesScreen> {
                       ref.read(selectedCategoryFilterProvider.notifier).state = null;
                       ref.read(selectedTagFilterProvider.notifier).state = null;
                       ref.read(selectedDateRangeFilterProvider.notifier).state = null;
+                      ref.read(selectedLengthFilterProvider.notifier).state = null;
                       setState(() {});
                     },
                     icon: const Icon(Icons.filter_alt_off_rounded, size: 14),
@@ -229,7 +284,7 @@ class _EntriesScreenState extends ConsumerState<EntriesScreen> {
           ),
 
           // Active filter details banner
-          if (selectedCat != null || selectedTag != null || selectedDateRange != null)
+          if (selectedCat != null || selectedTag != null || selectedDateRange != null || selectedLength != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
               child: Row(
@@ -250,6 +305,18 @@ class _EntriesScreenState extends ConsumerState<EntriesScreen> {
                     _buildActiveChip('${_formatDateShort(selectedDateRange.start)} - ${_formatDateShort(selectedDateRange.end)}', () {
                       ref.read(selectedDateRangeFilterProvider.notifier).state = null;
                     }, theme),
+                  if (selectedLength != null)
+                    _buildActiveChip(
+                      selectedLength == 'short'
+                          ? 'Short (< 150 words)'
+                          : selectedLength == 'medium'
+                              ? 'Medium (150-500 words)'
+                              : 'Long (> 500 words)',
+                      () {
+                        ref.read(selectedLengthFilterProvider.notifier).state = null;
+                      },
+                      theme,
+                    ),
                 ],
               ),
             ),

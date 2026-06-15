@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/models/models.dart';
 import '../../../core/providers/providers.dart';
 
@@ -51,42 +52,27 @@ class ExportScreen extends ConsumerWidget {
     }
   }
 
-  void _mockDownloadFile(BuildContext context, ExportJob job) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.file_download_done_rounded, color: Colors.green),
-            const SizedBox(width: 8),
-            Text('${job.format} Download Ready'),
-          ],
-        ),
-        content: Text(
-          'Your file is generated and hosted at:\n\n'
-          '${job.downloadUrl}\n\n'
-          'Would you like to simulate saving it locally?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Saved journal_export_${job.exportId}.${job.format.toLowerCase()} to downloads folder!'),
-                  backgroundColor: Colors.teal,
-                ),
-              );
-            },
-            child: const Text('Simulate Save'),
-          ),
-        ],
-      ),
-    );
+  void _downloadFile(BuildContext context, ExportJob job) async {
+    final url = job.downloadUrl;
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Download URL is empty'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to open download link: $e'), backgroundColor: Colors.redAccent),
+      );
+    }
   }
 
   @override
@@ -122,12 +108,14 @@ class ExportScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             GridView.count(
-              crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
+              crossAxisCount: MediaQuery.of(context).size.width < 600
+                  ? 1
+                  : (MediaQuery.of(context).size.width < 900 ? 2 : 4),
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 1.8,
+              childAspectRatio: MediaQuery.of(context).size.width < 600 ? 1.8 : 1.3,
               children: [
                 _buildFormatCard(
                   context,
@@ -144,6 +132,14 @@ class ExportScreen extends ConsumerWidget {
                   description: 'Editable Microsoft Word document. Best for text modifications.',
                   icon: Icons.description_rounded,
                   iconColor: Colors.blueAccent,
+                ),
+                _buildFormatCard(
+                  context,
+                  ref,
+                  format: 'HTML',
+                  description: 'Clean HTML webpage layout. Great for viewing in web browsers.',
+                  icon: Icons.html_rounded,
+                  iconColor: Colors.teal,
                 ),
                 _buildFormatCard(
                   context,
@@ -352,7 +348,7 @@ class ExportScreen extends ConsumerWidget {
         ),
         trailing: job.status == 'Completed'
             ? ElevatedButton.icon(
-                onPressed: () => _mockDownloadFile(context, job),
+                onPressed: () => _downloadFile(context, job),
                 icon: const Icon(Icons.download_rounded, size: 14),
                 label: const Text('Download'),
                 style: ElevatedButton.styleFrom(

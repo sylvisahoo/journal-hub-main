@@ -133,3 +133,31 @@ This project is developed using an AI-assisted workflow with specialized persona
 * Flutter Frontend Developer
 * QA Engineer
 
+---
+
+# 🐳 Docker Setup
+
+Journal Hub is fully containerized using Docker and Docker Compose. This starts both the backend API server and the frontend Nginx server with hot reload and data persistence.
+
+### Prerequisites
+
+Ensure you have Docker and Docker Compose installed on your system.
+
+### Running the Application
+
+To build and start all services, run the following command in the project root:
+
+```bash
+docker-compose up --build
+```
+
+Once the build is complete, you can access the application:
+
+* **Frontend Web App**: http://localhost:3000
+* **Backend API**: http://localhost:5001
+
+### Persistent Data
+
+* **SQLite Database**: The journal database file is persisted on your host machine via a named Docker volume (`backend-data`), preventing data loss when containers are stopped or removed.
+* **Exports**: Exported files (PDF, DOCX, HTML, JSON) are stored in the `backend-exports` volume.
+

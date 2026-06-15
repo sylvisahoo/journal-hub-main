@@ -70,6 +70,20 @@ export const journalController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async importJournals(req, res, next) {
+    try {
+      const { entries } = req.body;
+      if (!entries || !Array.isArray(entries)) {
+        return res.status(400).json({ errorCode: 'INVALID_IMPORT_DATA', message: 'Entries must be a valid array' });
+      }
+      const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const result = await journalService.importJournals(req.user.userId, entries, clientIp);
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
