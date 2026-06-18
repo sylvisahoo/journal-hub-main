@@ -57,18 +57,14 @@ Review the existing Personal Journal App codebase and verify whether the followi
 
 ## Tasks
 
-1. Perform a complete codebase audit.
-
-2. Compare the current implementation against the enhancement feature list below.
-
-3. Create a report named `enhancement_audit.md` containing:
+1. Create a report named `enhancement_audit.md` containing:
 
     * Feature Name
     * Status (Implemented / Partially Implemented / Missing)
     * Files affected
     * Recommended implementation approach
 
-4. For all features marked as **Missing** or **Partially Implemented**:
+2. For all features marked as **Missing** or **Partially Implemented**:
 
     * Implement the feature completely.
     * Follow the existing project architecture, coding standards, and UI patterns.
