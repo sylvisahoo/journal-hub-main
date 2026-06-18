@@ -1,5 +1,61 @@
 # CR Prompt
 
+# Project Analysis Prompt
+Act as a Senior Software Architect and Technical Lead.
+
+Before implementing the change requ est, first analyze the existing project and understand how it currently works.
+
+Please:
+
+* Review the overall architecture and tech stack.
+* Identify all modules, screens, APIs, database entities, and third-party integrations.
+* Explain the purpose of each affected component.
+* Analyze the change request and identify exactly which areas of the system will be impacted.
+* Highlight dependencies, risks, edge cases, and potential side effects.
+* Recommend the best implementation approach.
+
+Provide a concise report covering:
+
+1. Current system overview
+2. Affected modules/components
+3. Required frontend changes
+4. Required backend changes
+5. Database/API impact
+6. Risks and considerations
+7. Step-by-step implementation plan
+
+Do not start coding yet. First understand the project and present your findings.
+
+# Comparison 
+
+Act as a Senior Product Manager.
+
+Compare the Existing KPI and New Enhancement KPI documents and identify all differences.
+
+Please:
+
+* Match related KPIs.
+* Highlight new, modified, and removed requirements.
+* Categorize each change as New Feature, Enhancement, Modification, or Removal.
+* Identify the impacted modules.
+
+Output format:
+
+### Summary
+
+* New Features
+* Enhancements
+* Modifications
+* Removals
+
+### Change Log
+
+| Module | Existing KPI | New KPI | Change Type | Impact |
+| ------ | ------------ | ------- | ----------- | ------ |
+
+Also provide a brief estimate of frontend, backend, database, and testing impact for each module.
+
+
 # Change Request Verification & Implementation
 
 Review the existing Personal Journal App codebase and verify whether the following enhancement features are already implemented.
