@@ -25,9 +25,6 @@ Provide a concise report covering:
 Do not start coding yet. First understand the project and present your findings.
 
 # Comparison 
-
-Act as a Senior Product Manager.
-
 Compare the Existing KPI and New Enhancement KPI documents and identify all differences.
 
 Please:
