@@ -1,9 +1,7 @@
-# CR Prompt
+# CR Prompts 
 
 # Project Analysis Prompt
-Act as a Senior Software Architect and Technical Lead.
-
-Before implementing the change requ est, first analyze the existing project and understand how it currently works.
+Before implementing the change request, first analyze the existing project and understand how it currently works.
 
 Please:
 
